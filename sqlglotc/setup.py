@@ -24,6 +24,11 @@ SOURCE_FILES = [
         for f in sorted(os.listdir(os.path.join(sqlglot_src, "expressions")))
         if f.endswith(".py") and f != "__init__.py"
     ],
+    *[
+        os.path.join("parsers", f)
+        for f in sorted(os.listdir(os.path.join(sqlglot_src, "parsers")))
+        if f.endswith(".py") and f != "__init__.py"
+    ],
 ]
 
 
