@@ -851,6 +851,7 @@ class TestDuckDB(Validator):
                 "spark": "x RLIKE y",
             },
         )
+        self.validate_identity("SELECT SPLIT_PART('11.22.33', '.', 1)")
         self.validate_all(
             "STR_SPLIT(x, 'a')",
             write={

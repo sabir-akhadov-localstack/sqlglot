@@ -218,7 +218,13 @@ class TestSnowflake(Validator):
         self.validate_identity("SELECT TRANSLATE(column_name, 'abc', '123')")
         self.validate_identity("SELECT UNICODE(column_name)")
         self.validate_identity("SELECT WIDTH_BUCKET(col, 0, 100, 10)")
-        self.validate_identity("SELECT SPLIT_PART('11.22.33', '.', 1)")
+        self.validate_all(
+            "SELECT SPLIT_PART('11.22.33', '.', 1)",
+            write={
+                "snowflake": "SELECT SPLIT_PART('11.22.33', '.', 1)",
+                "duckdb": "SELECT SPLIT_PART('11.22.33', '.', 1)",
+            },
+        )
         self.validate_all(
             "SELECT SPLIT('127.0.0.1', '.')",
             write={
