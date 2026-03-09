@@ -961,7 +961,7 @@ class TestDuckDB(Validator):
         self.validate_all(
             "ARRAY_REVERSE_SORT(x)",
             write={
-                "duckdb": "ARRAY_REVERSE_SORT(x)",
+                "duckdb": "LIST_SORT(x, 'DESC', 'NULLS LAST')",
                 "presto": "ARRAY_SORT(x, (a, b) -> CASE WHEN a < b THEN 1 WHEN a > b THEN -1 ELSE 0 END)",
                 "hive": "SORT_ARRAY(x, FALSE)",
                 "spark": "SORT_ARRAY(x, FALSE)",
@@ -970,7 +970,7 @@ class TestDuckDB(Validator):
         self.validate_all(
             "LIST_REVERSE_SORT(x)",
             write={
-                "duckdb": "ARRAY_REVERSE_SORT(x)",
+                "duckdb": "LIST_SORT(x, 'DESC', 'NULLS LAST')",
                 "presto": "ARRAY_SORT(x, (a, b) -> CASE WHEN a < b THEN 1 WHEN a > b THEN -1 ELSE 0 END)",
                 "hive": "SORT_ARRAY(x, FALSE)",
                 "spark": "SORT_ARRAY(x, FALSE)",
