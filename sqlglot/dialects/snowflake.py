@@ -499,6 +499,7 @@ class Snowflake(Dialect):
         KEYWORDS = {
             **tokens.Tokenizer.KEYWORDS,
             "BYTEINT": TokenType.INT,
+            "DECLARE": TokenType.DECLARE,
             "FILE://": TokenType.URI_START,
             "FILE FORMAT": TokenType.FILE_FORMAT,
             "GET": TokenType.GET,
@@ -1290,3 +1291,21 @@ class Snowflake(Dialect):
                 # omit the default window from window ranking functions
                 expression.set("spec", None)
             return super().window_sql(expression)
+
+        def block_sql(self, expression: exp.Block) -> str:
+            expressions = self.expressions(expression, sep="; ", flat=True)
+            return f"BEGIN {expressions}" if expressions else "BEGIN"
+
+        def declare_sql(self, expression: exp.Declare) -> str:
+            items = self.expressions(expression, sep="; ", flat=True)
+            body = self.sql(expression, "body")
+            body = f"; {body}" if body else ""
+            return f"DECLARE {items}{body}"
+
+        def declareitem_sql(self, expression: exp.DeclareItem) -> str:
+            this = self.sql(expression, "this")
+            kind = self.sql(expression, "kind")
+            kind = f" {kind}" if kind else ""
+            default = self.sql(expression, "default")
+            default = f" DEFAULT {default}" if default else ""
+            return f"{this}{kind}{default}"

@@ -663,6 +663,8 @@ class SnowflakeParser(parser.Parser):
 
     STATEMENT_PARSERS = {
         **parser.Parser.STATEMENT_PARSERS,
+        TokenType.BEGIN: lambda self: self._parse_begin(),
+        TokenType.DECLARE: lambda self: self._parse_declare(),
         TokenType.GET: lambda self: self._parse_get(),
         TokenType.PUT: lambda self: self._parse_put(),
         TokenType.SHOW: lambda self: self._parse_show(),
@@ -1132,6 +1134,57 @@ class SnowflakeParser(parser.Parser):
             )
             result.set("spec", frame)
         return result
+
+    def _parse_begin(self) -> exp.Transaction | exp.Command | exp.Block:
+        if self._curr and self._curr.text.upper() in (
+            "TRANSACTION",
+            "WORK",
+            *self.TRANSACTION_KIND,
+        ):
+            return self._parse_transaction()
+        return self._parse_block()
+
+    def _parse_declare(self) -> exp.Declare:
+        expressions = self._parse_csv(self._parse_sf_declareitem)
+
+        # Collect declare items from subsequent chunks (separated by ;) until BEGIN or END
+        while self._chunk_index < len(self._chunks):
+            next_chunk = self._chunks[self._chunk_index]
+            if not next_chunk:
+                break
+
+            first_token = next_chunk[0]
+            if first_token.token_type in (TokenType.BEGIN, TokenType.END) or (
+                first_token.token_type in self.STATEMENT_PARSERS
+                and first_token.token_type != TokenType.DECLARE
+            ):
+                break
+
+            self._advance_chunk()
+            expressions.extend(self._parse_csv(self._parse_sf_declareitem))
+
+        # Parse the BEGIN...END body
+        body = None
+        if self._chunk_index < len(self._chunks):
+            next_chunk = self._chunks[self._chunk_index]
+            if next_chunk and next_chunk[0].token_type == TokenType.BEGIN:
+                self._advance_chunk()
+                self._advance()  # skip BEGIN
+                body = self._parse_block()
+
+        return self.expression(exp.Declare, expressions=expressions, body=body)
+
+    def _parse_sf_declareitem(self) -> t.Optional[exp.DeclareItem]:
+        this = self._parse_id_var()
+        if not this:
+            return None
+
+        kind = self._parse_types()
+        default = None
+        if self._match_text_seq(":=") or self._match(TokenType.DEFAULT):
+            default = self._parse_bitwise()
+
+        return self.expression(exp.DeclareItem, this=this, kind=kind, default=default)
 
 
 # This is imported and used by both the parser (above) and the generator in the dialect file
