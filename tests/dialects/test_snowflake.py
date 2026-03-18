@@ -6332,3 +6332,15 @@ FROM SEMANTIC_VIEW(
                     prefix = natural + join_side + outer + " DIRECTED"
                     with self.subTest(f"Testing {prefix} JOIN"):
                         self.validate_identity(f"SELECT * FROM a {prefix} JOIN b USING (id)")
+
+    def test_sql_scripting(self):
+        self.validate_identity("BEGIN SELECT 1; END")
+        self.validate_identity("BEGIN SELECT 1; SELECT 2; END")
+        self.validate_identity("DECLARE x INT DEFAULT 0; BEGIN SELECT x; END")
+        self.validate_identity("DECLARE x INT; y VARCHAR; BEGIN SELECT x; END")
+        self.validate_identity(
+            "DECLARE x INT := 0; BEGIN SELECT x; END",
+            "DECLARE x INT DEFAULT 0; BEGIN SELECT x; END",
+        )
+        # BEGIN TRANSACTION should still parse as Transaction, not Block
+        self.validate_identity("BEGIN TRANSACTION", "BEGIN")
